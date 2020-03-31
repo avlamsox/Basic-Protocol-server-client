@@ -9,7 +9,7 @@
 #include "gen.h"
 
 #define SERVER_PORT 20211
-#define SERVER_ADDR "10.90.30.86"
+#define SERVER_ADDR "127.0.0.1"
 
 int main(int argc, char *argv[])
 {
@@ -18,7 +18,10 @@ int main(int argc, char *argv[])
 	struct sockaddr_in cli_addr;
 
 	struct cmd_msg cli;
-	cli.cmd = GET_HOSTNAME;
+	//cli.cmd = GET_HOSTNAME;
+	//cli.cmd = GET_TIME;
+	//cli.cmd = GET_USER;
+	cli.cmd = GET_OS;
 	char *msg = "Hi Server";
 
 	strncpy(cli.message, msg,sizeof(msg));
@@ -57,7 +60,7 @@ int main(int argc, char *argv[])
 		if(rxd_bytes = recv(cli_sock, buffer, 4096, 0)){
 			printf("Received %d bytes from server\n",rxd_bytes);
 			struct cmd_msg *cli_t = (struct cmd_msg *)&buffer;
-			printf("We received our query response %s\n",cli_t->message);
+			printf("We received our query response %s and command was %d\n",cli_t->message, cli_t->cmd);
 		}
 	}
 	

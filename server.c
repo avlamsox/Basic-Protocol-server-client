@@ -6,6 +6,8 @@
 #include <errno.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <time.h>
+#include <pwd.h>
 
 #include "gen.h"
 
@@ -14,8 +16,9 @@
 struct cmd_msg *parseMessages(struct cmd_msg *msg)
 {
 	int ret;
+	time_t now;
 	struct cmd_msg *loc = msg;
-	char results[10];
+	char result_buf[32] = {0};
 
 	//Here we will parse the received message and send appropriate reply message
 	switch(loc->cmd) {
@@ -25,9 +28,50 @@ struct cmd_msg *parseMessages(struct cmd_msg *msg)
 		ret = gethostname(loc->message, 100);
 		if(ret)
 			fprintf(stderr, "Failed to get hostname\n");
-		else 
+		else {
 			printf("The hostname of server is %s\n",loc->message);	
+			snprintf(result_buf, strlen(loc->message), "%s", loc->message);
+		}
+		break;
 
+	case GET_TIME:
+		printf("We received a request to get our time\n");
+		
+		ret = time(&now);
+		if(!ret)
+			fprintf(stderr, "Failed to get hostname\n");
+		else  {
+			printf("The Current time is %s\n",ctime(&now));	
+			snprintf(loc->message, 32,"%s",ctime(&now));
+			}
+
+		break;
+	
+	case GET_USER:
+		printf("We received a request to get current user \n");
+		uid_t uid = geteuid();
+		struct passwd *pw = getpwuid(uid);
+		if(!pw)
+			fprintf(stderr, "Failed to get hostname\n");
+		else {
+			printf("The Current user=%s with uid=%d \n",pw->pw_name, uid);	
+			snprintf(loc->message, 32,"%s",pw->pw_name);
+		}
+
+		break;
+
+	case GET_OS:
+		printf("We received a request to get our OS details\n");
+		FILE *fp;
+		char s;
+		int count = 0;
+		fp = fopen("/etc/issue.net", "r");
+		while((s = fgetc(fp)) != EOF) {
+		  loc->message[count] = s;
+		  printf("%c",loc->message[count]);
+		  count = count + 1;
+   		}
+		fclose(fp);
 		break;
 		
 	default :
@@ -57,7 +101,7 @@ int main(int argc, char *argv[])
 	bzero(&serv_addr,sizeof(serv_addr));
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_port = htons(SERVER_PORT);
-	serv_addr.sin_addr.s_addr = inet_addr("10.90.30.86");
+	serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 	//serv_addr.sin_addr.s_addr = INADDR_ANY;
 
 	//Bind the socket - i.e assign a name to the socket
