@@ -5,6 +5,7 @@
 #include <sys/socket.h>
 #include <errno.h>
 #include <arpa/inet.h>
+#include <unistd.h>
 
 #include "gen.h"
 
